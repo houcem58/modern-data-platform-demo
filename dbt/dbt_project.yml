@@ -1,0 +1,50 @@
+name: sales_platform
+version: '1.0.0'
+profile: sales_platform
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  sales_platform:
+
+    staging:
+      +materialized: view
+      +schema: staging
+
+    marts:
+      +materialized: table
+      +schema: marts
+
+      fact_sales:
+        +materialized: incremental
+        +unique_key: ORDER_ID
+        +on_schema_change: merge
+        +post_hook:
+          - "CREATE INDEX IF NOT EXISTS idx_fact_sales_order_date ON {{ this }} (ORDER_DATE_KEY)"
+          - "CREATE INDEX IF NOT EXISTS idx_fact_sales_geography ON {{ this }} (GEOGRAPHY_ID)"
+
+      dim_date:
+        +materialized: incremental
+        +unique_key: DATE_KEY
+        +on_schema_change: sync
+
+      dim_geography:
+        +post_hook:
+          - "CREATE INDEX IF NOT EXISTS idx_dim_geography_region ON {{ this }} (REGION)"
+
+      dim_product: {}
+      dim_channel: {}
+      dim_priority: {}
+
+    consumption:
+      +materialized: table
+      +schema: consumption

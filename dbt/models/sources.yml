@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: raw
+    database: sales_platform
+    schema: raw
+    description: "Raw ingestion layer — source CSV data loaded by the ingestion pipeline"
+    tables:
+      - name: sales
+        description: "Raw sales transactions from source system"
+        columns:
+          - name: ORDER_ID
+            description: "Unique order identifier"
+            tests:
+              - not_null
+          - name: ORDER_DATE
+            description: "Date the order was placed"
+            tests:
+              - not_null
+          - name: SHIP_DATE
+            description: "Date the order was shipped"
+          - name: REGION
+            description: "Geographic region"
+          - name: COUNTRY
+            description: "Country of order destination"
+          - name: ITEM_TYPE
+            description: "Product category"
+          - name: SALES_CHANNEL
+            description: "Online or Offline"
+          - name: ORDER_PRIORITY
+            description: "H / M / L / C (Critical)"
+          - name: UNITS_SOLD
+            description: "Number of units"
+          - name: UNIT_PRICE
+            description: "Unit selling price"
+          - name: UNIT_COST
+            description: "Unit cost price"
+          - name: TOTAL_REVENUE
+            description: "Pre-computed total revenue (validated against UNITS_SOLD * UNIT_PRICE)"
+          - name: TOTAL_COST
+            description: "Pre-computed total cost"
+          - name: TOTAL_PROFIT
+            description: "Pre-computed total profit"
