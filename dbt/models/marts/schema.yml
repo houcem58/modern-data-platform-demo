@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: fact_sales
+    description: "Core fact table — one row per order. Foreign keys to all dimension tables. Derived metrics (TOTAL_REVENUE, TOTAL_COST, TOTAL_PROFIT) computed from unit values, not sourced from raw."
+    columns:
+      - name: ORDER_ID
+        tests: [not_null, unique]
+      - name: ORDER_DATE_KEY
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: DATE_KEY
+      - name: SHIP_DATE_KEY
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: DATE_KEY
+      - name: PRODUCT_ID
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_product')
+              field: PRODUCT_ID
+      - name: GEOGRAPHY_ID
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_geography')
+              field: GEOGRAPHY_ID
+      - name: CHANNEL_ID
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_channel')
+              field: CHANNEL_ID
+      - name: PRIORITY_ID
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_priority')
+              field: PRIORITY_ID
+      - name: UNITS_SOLD
+        tests: [not_null]
+      - name: UNIT_PRICE
+        tests: [not_null]
+      - name: UNIT_COST
+        tests: [not_null]
+      - name: SHIPPING_DAYS
+        description: "Lead time from order to shipment in days"
+
+  - name: dim_date
+    description: "Date dimension — one row per calendar date appearing in fact_sales (order or ship date)."
+    columns:
+      - name: DATE_KEY
+        tests: [not_null, unique]
+      - name: FULL_DATE
+        tests: [not_null]
+
+  - name: dim_geography
+    description: "Geography dimension — unique REGION / COUNTRY combinations."
+    columns:
+      - name: GEOGRAPHY_ID
+        tests: [not_null, unique]
+
+  - name: dim_product
+    description: "Product category dimension."
+    columns:
+      - name: PRODUCT_ID
+        tests: [not_null, unique]
+
+  - name: dim_channel
+    description: "Sales channel dimension (Online / Offline)."
+    columns:
+      - name: CHANNEL_ID
+        tests: [not_null, unique]
+
+  - name: dim_priority
+    description: "Order priority dimension with human-readable labels and sort order."
+    columns:
+      - name: PRIORITY_ID
+        tests: [not_null, unique]
