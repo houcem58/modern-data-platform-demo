@@ -1,0 +1,48 @@
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+dist/
+build/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+dbt/profiles.yml
+
+# Airflow
+airflow/logs/
+orchestration/logs/
+
+# Data (keep sample, exclude full datasets)
+data/raw/
+data/full/
+*.csv.gz
+*.parquet
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+
+# Power BI
+analytics/*.pbix
+analytics/*.pbip
+!analytics/*.md
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db

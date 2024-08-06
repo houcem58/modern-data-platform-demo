@@ -1,0 +1,13 @@
+# Core
+apache-airflow==2.9.1
+apache-airflow-providers-postgres==5.10.0
+dbt-postgres==1.8.0
+psycopg2-binary==2.9.9
+pandas==2.2.2
+
+# Cryptography (Airflow Fernet key)
+cryptography>=41.0.0
+
+# Dev / QA
+pytest==8.2.0
+pytest-mock==3.14.0
