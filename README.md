@@ -1,5 +1,7 @@
 # Modern Data Platform
 
+[![CI](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/ci.yml)
+
 > End-to-end sales analytics platform — PostgreSQL · dbt · Apache Airflow · Power BI
 
 A production-grade data platform that ingests raw sales data, transforms it through a star schema, orchestrates daily pipelines, and serves a semantic analytics layer to Power BI.
