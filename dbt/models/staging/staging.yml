@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: stg_sales
+    description: "Cleaned and deduplicated staging view over raw.sales. Applies COALESCE defaults, TRIM normalization, type casting, and deduplication by ORDER_ID."
+    columns:
+      - name: order_id
+        description: "Unique order identifier (deduplicated)"
+        tests:
+          - not_null
+          - unique
+      - name: order_date
+        description: "Order placement date"
+        tests:
+          - not_null
+      - name: ship_date
+        description: "Order shipment date"
+      - name: region
+        description: "Geographic region (trimmed)"
+      - name: country
+        description: "Country of destination (trimmed)"
+      - name: item_type
+        description: "Product category (trimmed)"
+      - name: sales_channel
+        description: "Online or Offline (trimmed)"
+      - name: order_priority
+        description: "H / M / L / C"
+      - name: units_sold
+        tests:
+          - not_null
+      - name: unit_price
+        tests:
+          - not_null
+      - name: unit_cost
+        tests:
+          - not_null
+      - name: total_revenue
+      - name: total_cost
+      - name: total_profit
