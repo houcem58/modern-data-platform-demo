@@ -9,5 +9,5 @@ pandas==2.2.2
 cryptography>=49.0.0
 
 # Dev / QA
-pytest==8.2.0
+pytest==9.1.1
 pytest-mock==3.14.0
