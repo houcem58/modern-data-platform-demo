@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  DBT_PROFILES_DIR: ${{ github.workspace }}/.github/dbt
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint Python sources
+        run: ruff check ingestion/ scripts/ orchestration/ --ignore E501,E402
+
+  validate-dbt:
+    name: dbt Compile
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sales_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dbt-postgres
+        run: pip install dbt-postgres
+
+      - name: Write CI dbt profile
+        run: |
+          mkdir -p .github/dbt
+          cat > .github/dbt/profiles.yml << 'EOF'
+          sales_platform:
+            target: ci
+            outputs:
+              ci:
+                type: postgres
+                host: localhost
+                port: 5432
+                user: postgres
+                password: postgres
+                dbname: sales_ci
+                schema: staging
+                threads: 2
+          EOF
+
+      - name: dbt deps
+        run: dbt deps --project-dir dbt
+
+      - name: dbt compile
+        run: dbt compile --project-dir dbt
+
+      - name: dbt test (schema + data quality)
+        run: dbt test --project-dir dbt --store-failures
+
+  validate-dags:
+    name: Validate Airflow DAGs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Airflow
+        run: |
+          pip install "apache-airflow==2.8.0" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.0/constraints-3.11.txt"
+
+      - name: Validate DAG imports
+        env:
+          AIRFLOW_HOME: /tmp/airflow
+        run: |
+          airflow db migrate
+          python - << 'EOF'
+          import sys
+          from airflow.models import DagBag
+          bag = DagBag(dag_folder="orchestration/dags", include_examples=False)
+          if bag.import_errors:
+              for dag, err in bag.import_errors.items():
+                  print(f"  ✗ [{dag}] {err}")
+              sys.exit(1)
+          print(f"  ✓ {len(bag.dags)} DAG(s) loaded successfully")
+          EOF
+
+  integration:
+    name: Integration — PostgreSQL + dbt
+    runs-on: ubuntu-latest
+    needs: [lint, validate-dbt]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sales_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt dbt-postgres
+
+      - name: Write CI dbt profile
+        run: |
+          mkdir -p .github/dbt
+          cat > .github/dbt/profiles.yml << 'EOF'
+          sales_platform:
+            target: ci
+            outputs:
+              ci:
+                type: postgres
+                host: localhost
+                port: 5432
+                user: postgres
+                password: postgres
+                dbname: sales_ci
+                schema: staging
+                threads: 2
+          EOF
+
+      - name: Initialise schema
+        run: psql postgresql://postgres:postgres@localhost:5432/sales_ci -f scripts/init_db.sql
+
+      - name: Run ingestion
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: sales_ci
+        run: python ingestion/load_sales.py --source data/sample/sales_sample.csv
+
+      - name: dbt run
+        run: dbt run --project-dir dbt
+
+      - name: Smoke test
+        run: python scripts/smoke_test.py
+
+  docker:
+    name: Docker Compose Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose syntax
+        run: docker compose config -q
