@@ -50,6 +50,3 @@ CREATE TABLE IF NOT EXISTS raw.sales (
 CREATE INDEX IF NOT EXISTS idx_raw_sales_order_id   ON raw.sales ("ORDER_ID");
 CREATE INDEX IF NOT EXISTS idx_raw_sales_order_date ON raw.sales ("ORDER_DATE");
 
--- ── Airflow DB grants ─────────────────────────────────────────────────────────
-\connect airflow
-GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;
