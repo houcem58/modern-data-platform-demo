@@ -63,7 +63,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dbt
-        run: pip install dbt-postgres==1.8.0
+        run: pip install "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0"
 
       - name: Write dbt profile
         run: |
@@ -86,6 +86,7 @@ jobs:
       - name: Generate dbt docs
         env:
           DBT_PROFILES_DIR: ${{ github.workspace }}/.github/dbt
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: |
           dbt deps --project-dir dbt
           dbt docs generate --project-dir dbt --empty-catalog
