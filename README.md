@@ -173,8 +173,10 @@ See [docs/DataModel.md](docs/DataModel.md) for full schema definitions.
 |---|---|
 | Row count > 0 | Source validation |
 | NULL ORDER_ID < 1% | Source validation |
+| NULL ORDER_DATE < 1% | Source validation |
 | No future ORDER_DATE | Source validation |
 | SHIP_DATE ≥ ORDER_DATE | Source validation |
+| UNITS_SOLD all positive | Source validation |
 | not_null / unique on order_id | dbt staging test |
 | FK integrity — all 5 dimensions | dbt mart test |
 | TOTAL_REVENUE = UNITS_SOLD × UNIT_PRICE | dbt singular test |
