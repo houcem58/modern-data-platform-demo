@@ -1,10 +1,14 @@
-name: CI
+name: Pipeline
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"
@@ -30,6 +34,7 @@ jobs:
   validate-dbt:
     name: dbt Compile
     runs-on: ubuntu-latest
+    needs: lint
     services:
       postgres:
         image: postgres:15
@@ -43,7 +48,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v7
 
@@ -82,7 +86,7 @@ jobs:
           DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt compile --project-dir dbt
 
-      - name: dbt parse (validate model SQL)
+      - name: dbt parse
         env:
           DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt parse --project-dir dbt
@@ -90,6 +94,7 @@ jobs:
   validate-dags:
     name: Validate Airflow DAGs
     runs-on: ubuntu-latest
+    needs: lint
     steps:
       - uses: actions/checkout@v7
 
@@ -111,15 +116,25 @@ jobs:
           bag = DagBag(dag_folder="orchestration/dags", include_examples=False)
           if bag.import_errors:
               for dag, err in bag.import_errors.items():
-                  print(f"  ✗ [{dag}] {err}")
+                  print(f"  FAIL [{dag}] {err}")
               sys.exit(1)
-          print(f"  ✓ {len(bag.dags)} DAG(s) loaded successfully")
+          print(f"  OK {len(bag.dags)} DAG(s) loaded successfully")
           EOF
+
+  docker-validate:
+    name: Docker Compose Validate
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate compose syntax
+        run: docker compose config -q
 
   integration:
     name: Integration — PostgreSQL + dbt
     runs-on: ubuntu-latest
-    needs: [lint, validate-dbt]
+    needs: [validate-dbt, validate-dags]
     services:
       postgres:
         image: postgres:15
@@ -133,7 +148,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v7
 
@@ -193,10 +207,102 @@ jobs:
           DBT_DBNAME: sales_platform
         run: python scripts/smoke_test.py
 
-  docker:
-    name: Docker Compose Validate
+  publish:
+    name: Publish Docker Image
     runs-on: ubuntu-latest
+    needs: [integration, docker-validate]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
-      - name: Validate compose syntax
-        run: docker compose config -q
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-docs:
+    name: Deploy dbt Docs to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: integration
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dbt
+        run: pip install "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0"
+
+      - name: Initialise schema
+        run: psql postgresql://postgres:postgres@localhost:5432/postgres -f scripts/init_db.sql
+
+      - name: Write dbt profile
+        run: |
+          mkdir -p .github/dbt
+          cat > .github/dbt/profiles.yml << 'EOF'
+          sales_platform:
+            target: ci
+            outputs:
+              ci:
+                type: postgres
+                host: localhost
+                port: 5432
+                user: postgres
+                password: postgres
+                dbname: sales_platform
+                schema: staging
+                threads: 2
+          EOF
+
+      - name: Generate dbt docs
+        env:
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
+        run: |
+          dbt deps --project-dir dbt
+          dbt docs generate --project-dir dbt
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dbt/target
+          publish_branch: gh-pages

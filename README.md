@@ -1,6 +1,6 @@
 # Modern Data Platform
 
-[![CI](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/ci.yml)
+[![Pipeline](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/pipeline.yml/badge.svg)](https://github.com/houcem58/modern-data-platform-demo/actions/workflows/pipeline.yml)
 
 > End-to-end sales analytics platform — PostgreSQL · dbt · Apache Airflow · Power BI
 
