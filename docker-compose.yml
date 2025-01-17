@@ -3,6 +3,7 @@ version: "3.9"
 x-airflow-common: &airflow-common
   image: apache/airflow:2.9.1
   environment: &airflow-env
+    _PIP_ADDITIONAL_REQUIREMENTS: "apache-airflow-providers-postgres==5.10.0 psycopg2-binary==2.9.9"
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@postgres:5432/${AIRFLOW_DB_NAME}
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
@@ -60,7 +61,6 @@ services:
     command:
       - -c
       - |
-        pip install "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0" "psycopg2-binary==2.9.12" "apache-airflow-providers-postgres==5.10.0" && \
         airflow db upgrade && \
         airflow users create \
           --username ${AIRFLOW_ADMIN_USER:-admin} \

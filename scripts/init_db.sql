@@ -8,7 +8,14 @@ CREATE DATABASE sales_platform;
 
 -- ── Users ────────────────────────────────────────────────────────────────────
 CREATE USER platform_user WITH PASSWORD 'platform_password';
-CREATE USER airflow     WITH PASSWORD 'airflow_password';
+CREATE USER airflow       WITH PASSWORD 'airflow_password';
+
+-- ── Airflow metadata DB — PostgreSQL 15 public schema fix ────────────────────
+-- PostgreSQL 15 revoked CREATE on public schema from PUBLIC by default.
+-- Must come AFTER CREATE USER airflow above.
+GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;
+\connect airflow
+GRANT CREATE ON SCHEMA public TO airflow;
 
 -- ── Sales platform grants ─────────────────────────────────────────────────────
 \connect sales_platform

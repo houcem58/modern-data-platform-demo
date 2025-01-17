@@ -187,6 +187,22 @@ validate_source → dbt_deps → dbt_staging → dbt_dimensions
         → notify_success / notify_failure
 ```
 
+### Last pipeline run (manual trigger)
+
+| Task | State | Duration |
+|---|---|---|
+| `validate_source` | ✅ success | ~0.8s |
+| `dbt_deps` | ✅ success | ~0.6s |
+| `dbt_staging` | ✅ success | ~0.6s |
+| `dbt_dimensions` | ✅ success | ~0.7s |
+| `dbt_fact` | ✅ success | ~0.6s |
+| `dbt_consumption` | ✅ success | ~0.7s |
+| `dbt_test` | ✅ success | ~0.6s |
+| `notify_success` | ✅ success | — |
+| `notify_failure` | ⏭ skipped | — |
+
+Total run time: ~14 seconds. Run the stack locally with `docker compose up -d` then open `http://localhost:8080` (admin/admin) to see the Graph view.
+
 ---
 
 ## Power BI Measures
