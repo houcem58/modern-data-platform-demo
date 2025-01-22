@@ -77,7 +77,7 @@ EXPECTED_COLUMNS = {
 def _parse_date(value: str) -> str | None:
     for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%d/%m/%Y"):
         try:
-            return datetime.strptime(value.strip(), fmt).strftime("%Y-%m-%d")
+            return datetime.strptime(value.strip(), fmt).date().isoformat()  # noqa: DTZ007
         except ValueError:
             continue
     return None
@@ -114,13 +114,12 @@ def load(file_path: str, truncate: bool = False, batch_size: int = 1000) -> None
 
     conn = psycopg2.connect(**DB_CONFIG)
     try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(CREATE_SCHEMA_SQL)
-                cur.execute(CREATE_TABLE_SQL)
-                if truncate:
-                    log.info("Truncating raw.sales before load")
-                    cur.execute(TRUNCATE_SQL)
+        with conn, conn.cursor() as cur:
+            cur.execute(CREATE_SCHEMA_SQL)
+            cur.execute(CREATE_TABLE_SQL)
+            if truncate:
+                log.info("Truncating raw.sales before load")
+                cur.execute(TRUNCATE_SQL)
 
         log.info("Loading %s ...", path)
         rows_loaded = 0
