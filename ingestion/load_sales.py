@@ -135,24 +135,23 @@ def load(file_path: str, truncate: bool = False, batch_size: int = 1000) -> None
             if missing:
                 log.warning("Missing expected columns: %s", missing)
 
-            with conn:
-                with conn.cursor() as cur:
-                    for row in reader:
-                        try:
-                            batch.append(_coerce_row(row))
-                        except (ValueError, TypeError) as exc:
-                            rows_skipped += 1
-                            log.debug("Skipping row (parse error): %s — %s", row, exc)
+            with conn, conn.cursor() as cur:
+                for row in reader:
+                    try:
+                        batch.append(_coerce_row(row))
+                    except (ValueError, TypeError) as exc:
+                        rows_skipped += 1
+                        log.debug("Skipping row (parse error): %s — %s", row, exc)
 
-                        if len(batch) >= batch_size:
-                            execute_values(cur, INSERT_SQL, batch)
-                            rows_loaded += len(batch)
-                            log.info("  %d rows loaded ...", rows_loaded)
-                            batch = []
-
-                    if batch:
+                    if len(batch) >= batch_size:
                         execute_values(cur, INSERT_SQL, batch)
                         rows_loaded += len(batch)
+                        log.info("  %d rows loaded ...", rows_loaded)
+                        batch = []
+
+                if batch:
+                    execute_values(cur, INSERT_SQL, batch)
+                    rows_loaded += len(batch)
 
         log.info("Done. Loaded: %d rows | Skipped: %d rows", rows_loaded, rows_skipped)
 

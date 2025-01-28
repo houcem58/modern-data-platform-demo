@@ -9,7 +9,7 @@ Flow:
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
@@ -43,8 +43,7 @@ def validate_source_data(**context) -> None:
              "SELECT COUNT(*) FROM raw.sales",
              lambda v: v > 0),
             ("NULL ORDER_ID rate < 1%",
-             "SELECT ROUND(SUM(CASE WHEN \"ORDER_ID\" IS NULL THEN 1 ELSE 0 END)::NUMERIC"
-             " / NULLIF(COUNT(*), 0) * 100, 2) FROM raw.sales",
+             "SELECT ROUND(SUM(CASE WHEN \"ORDER_ID\" IS NULL THEN 1 ELSE 0 END)::NUMERIC / NULLIF(COUNT(*), 0) * 100, 2) FROM raw.sales",
              lambda v: v is None or v < 1),
             ("No future ORDER_DATE",
              "SELECT COUNT(*) FROM raw.sales WHERE \"ORDER_DATE\" > CURRENT_DATE",
@@ -81,7 +80,7 @@ with DAG(
     dag_id="sales_platform_pipeline",
     description="End-to-end sales data platform: validate → dbt staging → marts → consumption → test",
     schedule_interval="0 6 * * *",
-    start_date=datetime(2026, 1, 1),
+    start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     default_args=DEFAULT_ARGS,
     tags=["sales", "dbt", "data-platform"],
@@ -138,9 +137,9 @@ validate_source → dbt_deps → dbt_staging → dbt_dimensions
     t_dims = BashOperator(
         task_id="dbt_dimensions",
         bash_command=(
-            f"echo '[dbt] Building dimension tables...' && "
-            f"echo 'dbt run --select dim_date dim_geography dim_product dim_channel dim_priority' && "
-            f"echo '[dbt] Dimensions: 5 tables built.'"
+            "echo '[dbt] Building dimension tables...' && "
+            "echo 'dbt run --select dim_date dim_geography dim_product dim_channel dim_priority' && "
+            "echo '[dbt] Dimensions: 5 tables built.'"
         ),
         doc_md="Builds dim_date, dim_geography, dim_product, dim_channel, dim_priority.",
     )

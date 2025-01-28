@@ -93,28 +93,27 @@ def main() -> None:
     print("Connecting to sales_platform ...")
     try:
         conn = psycopg2.connect(**DB_CONFIG)
-    except Exception as exc:
+    except psycopg2.Error as exc:
         print(f"[FAIL] Cannot connect: {exc}")
         sys.exit(1)
 
     passed = 0
     failed = 0
 
-    with conn:
-        with conn.cursor() as cur:
-            for label, sql, ok_if in CHECKS:
-                try:
-                    cur.execute(sql)
-                    value = cur.fetchone()[0]
-                    if ok_if(value):
-                        print(f"  [PASS] {label} (value={value})")
-                        passed += 1
-                    else:
-                        print(f"  [FAIL] {label} (value={value})")
-                        failed += 1
-                except Exception as exc:
-                    print(f"  [ERROR] {label}: {exc}")
+    with conn, conn.cursor() as cur:
+        for label, sql, ok_if in CHECKS:
+            try:
+                cur.execute(sql)
+                value = cur.fetchone()[0]
+                if ok_if(value):
+                    print(f"  [PASS] {label} (value={value})")
+                    passed += 1
+                else:
+                    print(f"  [FAIL] {label} (value={value})")
                     failed += 1
+            except psycopg2.Error as exc:
+                print(f"  [ERROR] {label}: {exc}")
+                failed += 1
 
     conn.close()
     print(f"\nResult: {passed} passed, {failed} failed.")
