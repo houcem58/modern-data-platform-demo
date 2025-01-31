@@ -12,10 +12,15 @@ CREATE USER airflow       WITH PASSWORD 'airflow_password';
 
 -- ── Airflow metadata DB — PostgreSQL 15 public schema fix ────────────────────
 -- PostgreSQL 15 revoked CREATE on public schema from PUBLIC by default.
--- Must come AFTER CREATE USER airflow above.
+-- This section only runs when the airflow DB exists (local Docker).
+-- In CI, POSTGRES_DB is 'sales_ci' and the airflow DB is absent — skip safely.
+SELECT EXISTS(SELECT FROM pg_database WHERE datname = 'airflow')::text AS airflow_db_exists \gset
+\if :airflow_db_exists
 GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;
 \connect airflow
 GRANT CREATE ON SCHEMA public TO airflow;
+\connect postgres
+\endif
 
 -- ── Sales platform grants ─────────────────────────────────────────────────────
 \connect sales_platform
