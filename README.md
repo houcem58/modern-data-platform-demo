@@ -284,7 +284,11 @@ modern-data-platform-demo/
 |---|---|
 | [Architecture](docs/Architecture.md) | Full system design, orchestration, incremental strategies |
 | [Data Model](docs/DataModel.md) | Star schema definitions, FK relationships, grain |
+| [Data Lineage](docs/DataLineage.md) | Column-level lineage from raw source to consumption mart |
 | [Business Case](docs/BusinessCase.md) | Target scenarios, ROI framing |
+| [Engineering Standards](docs/EngineeringStandards.md) | Contribution guidelines, dbt conventions, quality gates |
+| [Runbook](docs/Runbook.md) | Operational procedures, DAG failure recovery, smoke tests |
+| [ADR-001](docs/decisions/ADR-001-star-schema-vs-ods.md) | Star schema chosen over ODS — rationale and trade-offs |
 | [Analytics](analytics/README.md) | Power BI connection guide |
 | [DAX Measures](analytics/dax_measures.md) | Full DAX measure library |
 | [Roadmap](ROADMAP.md) | Planned enhancements |
