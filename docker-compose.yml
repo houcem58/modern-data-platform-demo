@@ -60,7 +60,7 @@ services:
     command:
       - -c
       - |
-        pip install dbt-postgres psycopg2-binary apache-airflow-providers-postgres && \
+        pip install "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0" "psycopg2-binary==2.9.12" "apache-airflow-providers-postgres==5.10.0" && \
         airflow db upgrade && \
         airflow users create \
           --username ${AIRFLOW_ADMIN_USER:-admin} \

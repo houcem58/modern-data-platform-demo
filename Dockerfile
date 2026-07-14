@@ -12,4 +12,4 @@ LABEL org.opencontainers.image.source="https://github.com/houcem58/modern-data-p
 LABEL org.opencontainers.image.description="Modern Data Platform — dbt + Airflow + PostgreSQL"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-CMD ["python", "ingestion/load_sales.py"]
+CMD ["python", "ingestion/load_sales.py", "--file", "data/sample/sales_sample.csv"]
