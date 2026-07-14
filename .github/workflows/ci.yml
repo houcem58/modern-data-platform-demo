@@ -92,9 +92,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install Airflow
-        run: |
-          pip install "apache-airflow==2.8.0" "apache-airflow-providers-postgres==5.10.0" \
-            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.0/constraints-3.11.txt"
+        run: pip install -r requirements.txt
 
       - name: Validate DAG imports
         env:
