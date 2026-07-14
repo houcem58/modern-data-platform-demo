@@ -166,7 +166,7 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           DB_NAME: sales_ci
-        run: python ingestion/load_sales.py --source data/sample/sales_sample.csv
+        run: python ingestion/load_sales.py --file data/sample/sales_sample.csv
 
       - name: dbt run
         run: dbt run --project-dir dbt
