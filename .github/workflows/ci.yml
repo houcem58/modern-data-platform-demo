@@ -151,27 +151,33 @@ jobs:
                 port: 5432
                 user: postgres
                 password: postgres
-                dbname: sales_ci
+                dbname: sales_platform
                 schema: staging
                 threads: 2
           EOF
 
       - name: Initialise schema
-        run: psql postgresql://postgres:postgres@localhost:5432/sales_ci -f scripts/init_db.sql
+        run: psql postgresql://postgres:postgres@localhost:5432/postgres -f scripts/init_db.sql
 
       - name: Run ingestion
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: sales_ci
+          DBT_HOST: localhost
+          DBT_PORT: 5432
+          DBT_USER: postgres
+          DBT_PASSWORD: postgres
+          DBT_DBNAME: sales_platform
         run: python ingestion/load_sales.py --file data/sample/sales_sample.csv
 
       - name: dbt run
         run: dbt run --project-dir dbt
 
       - name: Smoke test
+        env:
+          DBT_HOST: localhost
+          DBT_PORT: 5432
+          DBT_USER: postgres
+          DBT_PASSWORD: postgres
+          DBT_DBNAME: sales_platform
         run: python scripts/smoke_test.py
 
   docker:
