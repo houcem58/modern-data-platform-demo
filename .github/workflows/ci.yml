@@ -52,7 +52,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dbt-postgres
-        run: pip install "dbt-postgres==1.8.0"
+        run: pip install "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0"
 
       - name: Write CI dbt profile
         run: |
@@ -73,12 +73,18 @@ jobs:
           EOF
 
       - name: dbt deps
+        env:
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt deps --project-dir dbt
 
       - name: dbt compile
+        env:
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt compile --project-dir dbt
 
       - name: dbt parse (validate model SQL)
+        env:
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt parse --project-dir dbt
 
   validate-dags:
@@ -136,7 +142,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt "dbt-postgres==1.8.0"
+        run: pip install -r requirements.txt "dbt-postgres==1.8.0" "dbt-core>=1.8.0,<1.9.0"
 
       - name: Write CI dbt profile
         run: |
@@ -169,6 +175,8 @@ jobs:
         run: python ingestion/load_sales.py --file data/sample/sales_sample.csv
 
       - name: dbt run
+        env:
+          DBT_ALLOW_EXPERIMENTAL_ADAPTERS: "true"
         run: dbt run --project-dir dbt
 
       - name: Smoke test
