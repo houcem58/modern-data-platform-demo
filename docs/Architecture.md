@@ -118,3 +118,21 @@ Daily 06:00 UTC
 | dim_date | incremental (append) | FULL_DATE |
 | fact_sales | incremental (merge) | ORDER_ID |
 | sales_performance | incremental (delete+insert) | YEAR, MONTH, REGION, COUNTRY, PRODUCT_CATEGORY, SALES_CHANNEL, ORDER_PRIORITY |
+
+---
+
+## Component Diagram
+
+```mermaid
+flowchart TD
+    SRC[("CSV / API")] -->|psycopg2 batch| RAW[("raw.sales\nPostgreSQL 15")]
+    RAW -->|dbt source| STG["stg_sales\nstaging — clean · cast · dedup"]
+    STG -->|dbt ref| DIM["dim_date · dim_geography\ndim_product · dim_channel · dim_priority"]
+    STG -->|dbt ref| FACT["fact_sales\nincremental merge on ORDER_ID"]
+    DIM -->|FK joins| FACT
+    FACT -->|dbt ref| CP["sales_performance\nmonthly grain · window functions"]
+    CP -->|Import/DirectQuery| PBI["Power BI\nDAX measures · KPI cards · reports"]
+    AF["Apache Airflow\ndaily 06:00 UTC"] -.->|orchestrates| STG
+    AF -.->|orchestrates| FACT
+    AF -.->|orchestrates| CP
+```
