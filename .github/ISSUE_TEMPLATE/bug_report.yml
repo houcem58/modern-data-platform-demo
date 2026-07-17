@@ -1,0 +1,51 @@
+name: Bug Report
+description: Report a pipeline failure, dbt model error, or data quality issue
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Ingestion (load_sales.py)
+        - Source validation (validate_source.py)
+        - dbt staging (stg_sales)
+        - dbt dimensions (dim_*)
+        - dbt fact (fact_sales)
+        - dbt consumption (sales_performance)
+        - Apache Airflow DAG
+        - Power BI semantic model
+        - Docker / infrastructure
+        - CI pipeline
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What failed? What was the expected behaviour?
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error output
+      render: shell
+
+  - type: textarea
+    id: data-state
+    attributes:
+      label: Data state at failure
+      description: Row count in raw.sales, date range, last successful Airflow run timestamp
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I ran `make smoke-test` and confirmed the failure
+        - label: I checked the Runbook for this failure mode
+        - label: I verified the source CSV is present and readable
