@@ -6,7 +6,7 @@ psycopg2-binary==2.9.12
 pandas==2.2.2
 
 # Cryptography (Airflow Fernet key)
-cryptography>=49.0.0
+cryptography>=50.0.0
 
 # Dev / QA
 pytest==9.1.1
